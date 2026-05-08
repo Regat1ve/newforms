@@ -1,0 +1,115 @@
+// Forms service — v0.1 schema
+// Auth.js v5 (Prisma adapter) + forms domain.
+// See PLAN.md in repo root for scope and design decisions.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────────────────────────────────────────
+// Auth.js (NextAuth) — required by @auth/prisma-adapter
+// ───────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+
+  accounts Account[]
+  sessions Session[]
+  forms    Form[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ───────────────────────────────────────────────────────────
+// Forms domain
+// ───────────────────────────────────────────────────────────
+
+model Form {
+  id          String   @id @default(cuid())
+  ownerId     String
+  name        String
+  description String?
+  slug        String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner       User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  fields      FormField[]
+  submissions Submission[]
+
+  @@index([ownerId])
+}
+
+model FormField {
+  id       String  @id @default(cuid())
+  formId   String
+  type     String
+  label    String
+  required Boolean @default(false)
+  options  Json?
+  order    Int
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+}
+
+model Submission {
+  id          String   @id @default(cuid())
+  formId      String
+  values      Json
+  statusOne   Boolean  @default(false)
+  statusTwo   Boolean  @default(false)
+  comment     String?
+  submittedAt DateTime @default(now())
+  ipAddress   String?
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@index([submittedAt])
+}
