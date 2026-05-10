@@ -6,7 +6,10 @@ export default function LoginPage() {
       <form
         action={async (formData) => {
           "use server";
-          await signIn("nodemailer", formData);
+          await signIn("nodemailer", {
+            email: formData.get("email"),
+            redirectTo: "/admin",
+          });
         }}
         className="w-full max-w-sm space-y-4"
       >

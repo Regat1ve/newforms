@@ -3,12 +3,12 @@
 // See PLAN.md in repo root for scope and design decisions.
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ───────────────────────────────────────────────────────────
